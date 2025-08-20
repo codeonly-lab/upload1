@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project File Upload</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #89fffd, #ef32d9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+    }
+    .upload-box {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        width: 350px;
+        text-align: center;
+    }
+    h2 {
+        margin-bottom: 15px;
+        color: #333;
+    }
+    input, button {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+    input {
+        background: #f1f1f1;
+    }
+    button {
+        background: #ef32d9;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    button:hover {
+        background: #d12fc1;
+    }
+    .note {
+        background-color: #e0ffe0;
+        border-left: 5px solid #4CAF50;
+        padding: 10px;
+        margin: 10px 0;
+        font-size: 13px;
+        text-align: left;
+    }
+    a {
+        color: #4CAF50;
+    }
+</style>
+</head>
+<body>
+
+<div class="upload-box">
+    <h2>Upload Project File</h2>
+    <input type="text" id="participants" placeholder="Participant Name(s)" required>
+    <input type="text" id="class" placeholder="Class" required>
+    <input type="text" id="section" placeholder="Section" required>
+    <input type="text" id="project" placeholder="Project Name" required>
+
+    <!-- ZIP conversion instruction -->
+    <div class="note">
+        ⚠️ Please convert your project files into a <strong>.zip</strong> format before uploading.<br>
+        For reference, you can use the online tool: 
+        <a href="https://www.ezyzip.com/" target="_blank">https://www.ezyzip.com/</a>.
+    </div>
+
+    <input type="file" id="fileInput" accept=".zip" required>
+    <button onclick="uploadFile()">Upload</button>
+    <p id="status"></p>
+</div>
+
+<script>
+    const cloudName = "dg2waxrfg"; // your cloud name
+    const unsignedUploadPreset = "hackathon_upload"; // your upload preset
+
+    async function uploadFile() {
+        const participants = document.getElementById("participants").value.trim();
+        const className = document.getElementById("class").value.trim();
+        const section = document.getElementById("section").value.trim();
+        const project = document.getElementById("project").value.trim();
+        const fileInput = document.getElementById("fileInput").files[0];
+        const statusText = document.getElementById("status");
+
+        if (!participants || !className || !section || !project || !fileInput) {
+            statusText.innerText = "Please fill all fields and select a file.";
+            statusText.style.color = "red";
+            return;
+        }
+
+        // Create new filename
+        const fileExt = fileInput.name.split('.').pop();
+        const newFileName = `${participants}_${className}_${section}_${project}.${fileExt}`;
+
+        const url = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
+        const formData = new FormData();
+        formData.append("file", fileInput);
+        formData.append("upload_preset", unsignedUploadPreset);
+        formData.append("public_id", newFileName); // rename file
+
+        statusText.innerText = "Uploading...";
+        statusText.style.color = "black";
+
+        try {
+            const res = await fetch(url, { method: "POST", body: formData });
+            const data = await res.json();
+            if (data.secure_url) {
+                statusText.innerHTML = `✅ Uploaded Successfully! <br> <a href="${data.secure_url}" target="_blank">View File</a>`;
+                statusText.style.color = "green";
+            } else {
+                throw new Error("Upload failed");
+            }
+        } catch (err) {
+            statusText.innerText = "❌ Upload failed!";
+            statusText.style.color = "red";
+        }
+    }
+</script>
+
+</body>
+</html>
